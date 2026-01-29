@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -162,6 +162,7 @@ async def update_event(
 @router.delete(
     "/{event_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
     summary="Delete event",
     description="Delete an event. Only the owner may delete.",
     operation_id="delete_event",
@@ -170,7 +171,7 @@ async def delete_event(
     event_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
-) -> None:
+) -> Response:
     # PUBLIC_INTERFACE
     """Delete an event owned by the current user."""
     stmt = select(Event).where(Event.id == event_id)
@@ -183,4 +184,4 @@ async def delete_event(
 
     await db.delete(event)
     await db.commit()
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

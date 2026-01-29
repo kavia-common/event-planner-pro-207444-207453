@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -106,6 +106,7 @@ async def set_my_rsvp(
 @router.delete(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
     summary="Delete my RSVP for an event",
     description="Remove current user's RSVP for an event.",
     operation_id="delete_my_rsvp",
@@ -114,14 +115,14 @@ async def delete_my_rsvp(
     event_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
-) -> None:
+) -> Response:
     # PUBLIC_INTERFACE
     """Delete RSVP for current user if it exists."""
     res = await db.execute(select(RSVP).where(and_(RSVP.event_id == event_id, RSVP.user_id == user.sub)))
     rsvp = res.scalar_one_or_none()
     if rsvp is None:
-        return None
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     await db.delete(rsvp)
     await db.commit()
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
